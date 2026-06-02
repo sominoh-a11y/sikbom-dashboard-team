@@ -239,15 +239,15 @@ const MEDIA = [
     key:'meta', label:'메타', color:'#1877F2', cls:'c-meta',
     campaigns:[
       { name:'FS_Meta_WEB_NRU_Conv_AON _2606_perform',   label:'WEB AON',
-        groups:[ {match:'Action_vid', label:'영상 그룹', cls:'lmf-group'}, {match:'Action_lmf', label:'LMF 그룹', cls:'lmf-group'}, {match:'Action_2606', label:'SKU 그룹', cls:'sku-group'} ] },
-      { name:'FS_Meta_WEB_NRU_Conv_TBD _2606_perform',   label:'WEB TBD',
-        groups:[ {match:'Action_vid', label:'영상 그룹', cls:'lmf-group'}, {match:'Action_lmf', label:'LMF 그룹', cls:'lmf-group'}, {match:'Action_2606', label:'SKU 그룹', cls:'sku-group'} ] },
+        groups:[ {match:'Mass_ADV_DT_175days_Action_vid_2606', label:'Mass_ADV_DT_175days_Action_vid_2606', cls:'lmf-group'}, {match:'Mass_ADV_DT_175days_Action_lmf_2606', label:'Mass_ADV_DT_175days_Action_lmf_2606', cls:'lmf-group'}, {match:'Mass_ADV_DT_175days_Action_2606', label:'Mass_ADV_DT_175days_Action_2606', cls:'sku-group'} ] },
       { name:'FS_Meta_WEB_NRU_Conv_INCU _2606_perform',  label:'WEB INCU',
-        groups:[ {match:'Action_vid', label:'영상 그룹', cls:'lmf-group'}, {match:'Action_lmf', label:'LMF 그룹', cls:'lmf-group'}, {match:'Action_2606', label:'SKU 그룹', cls:'sku-group'} ] },
+        groups:[ {match:'Mass_ADV_DT_175days_Action_vid_2606', label:'Mass_ADV_DT_175days_Action_vid_2606', cls:'lmf-group'}, {match:'Mass_ADV_DT_175days_Action_lmf_2606', label:'Mass_ADV_DT_175days_Action_lmf_2606', cls:'lmf-group'}, {match:'Mass_ADV_DT_175days_Action_2606', label:'Mass_ADV_DT_175days_Action_2606', cls:'sku-group'} ] },
+      { name:'FS_Meta_WEB_NRU_Conv_TBD _2606_perform',   label:'WEB TBD',
+        groups:[ {match:'Mass_ADV_DT_175days_Action_vid_2606', label:'Mass_ADV_DT_175days_Action_vid_2606', cls:'lmf-group'}, {match:'Mass_ADV_DT_175days_Action_lmf_2606', label:'Mass_ADV_DT_175days_Action_lmf_2606', cls:'lmf-group'}, {match:'Mass_ADV_DT_175days_Action_2606', label:'Mass_ADV_DT_175days_Action_2606', cls:'sku-group'} ] },
       { name:'FS_Meta_WEB_NRU_Conv_INTRO _2606_perform', label:'WEB INTRO',
-        groups:[ {match:'Action_vid', label:'영상 그룹', cls:'lmf-group'}, {match:'Action_lmf', label:'LMF 그룹', cls:'lmf-group'}, {match:'Action_2606', label:'SKU 그룹', cls:'sku-group'} ] },
+        groups:[ {match:'Mass_ADV_DT_175days_Action_vid_2606', label:'Mass_ADV_DT_175days_Action_vid_2606', cls:'lmf-group'}, {match:'Mass_ADV_DT_175days_Action_lmf_2606', label:'Mass_ADV_DT_175days_Action_lmf_2606', cls:'lmf-group'}, {match:'Mass_ADV_DT_175days_Action_2606', label:'Mass_ADV_DT_175days_Action_2606', cls:'sku-group'} ] },
       { name:'FS_Meta_iOS_NRU_Conv_AON _2606_perform',   label:'iOS AON',
-        groups:[ {match:'Action_vid', label:'영상 그룹', cls:'lmf-group'}, {match:'Action_lmf', label:'LMF 그룹', cls:'lmf-group'}, {match:'Action_2606', label:'SKU 그룹', cls:'sku-group'} ] },
+        groups:[ {match:'Mass_ADV_DT_175days_Action_vid_2606', label:'Mass_ADV_DT_175days_Action_vid_2606', cls:'lmf-group'}, {match:'Mass_ADV_DT_175days_Action_lmf_2606', label:'Mass_ADV_DT_175days_Action_lmf_2606', cls:'lmf-group'}, {match:'Mass_ADV_DT_175days_Action_2606', label:'Mass_ADV_DT_175days_Action_2606', cls:'sku-group'} ] },
     ]
   },
   {
@@ -319,7 +319,7 @@ function parseCreative(name, campaign) {
     // 거래처: SKU명 앞에 D가 붙으면 다봄푸드, 없으면 CJ (vid 소재는 제외)
     if (!isVid) {
       // D+SKU 패턴 체크
-      const hasD = /[_-]d(?:kogizip|wine|sushi|ai|typo)/i.test(name);
+      const hasD = /[_-]D(?:kogizip|wine|sushi|ai|typo|shrimp|mayo|colazero|onmirice|uglyyuksu|vinyl|happyoil|healthoil|ssammu|ssammmu|mdgrice)/i.test(name);
       if (hasD) tags.push({type:'partner-db', label:'다봄푸드'});
       else tags.push({type:'partner-cj', label:'CJFW'});
     }
