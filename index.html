@@ -409,6 +409,8 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     activeTab = btn.dataset.tab;
     if (document.getElementById('main-content').style.display !== 'none') {
+      // 콘텐츠 먼저 비워서 이전 데이터 노출 방지
+      document.getElementById('tab-content').innerHTML = '';
       const tabRows = activeTab === 'summary' ? allRows : allRows.filter(r => classifyRow(r) === activeTab);
       updateKPI(tabRows);
       renderTab();
@@ -487,7 +489,9 @@ async function fetchData(){
     allRows=data.rows||[];
     document.getElementById('main-content').style.display='block';
     document.getElementById('status-area').innerHTML='';
-    updateKPI(allRows);
+    // 현재 탭 기준으로 KPI 계산
+    const currentTabRows = activeTab === 'summary' ? allRows : allRows.filter(r => classifyRow(r) === activeTab);
+    updateKPI(currentTabRows);
     renderTab();
     const now = new Date();
     const timeStr = now.toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
