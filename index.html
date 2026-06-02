@@ -236,18 +236,31 @@ const MEDIA = [
   {
     key:'meta', label:'메타', color:'#1877F2', cls:'c-meta',
     campaigns:[
-      { name:'FS_Meta_WEB_NRU_Conv_AON _2606_perform',   label:'WEB AON' },
-      { name:'FS_Meta_WEB_NRU_Conv_TBD _2606_perform',   label:'WEB TBD' },
-      { name:'FS_Meta_WEB_NRU_Conv_INCU _2606_perform',  label:'WEB INCU' },
-      { name:'FS_Meta_WEB_NRU_Conv_INTRO _2606_perform', label:'WEB INTRO' },
-      { name:'FS_Meta_iOS_NRU_Conv_AON _2606_perform',   label:'iOS AON' },
+      { name:'FS_Meta_WEB_NRU_Conv_AON _2606_perform',   label:'WEB AON',
+        groups:[ {match:'Action_vid', label:'영상 그룹', cls:'lmf-group'}, {match:'Action_lmf', label:'LMF 그룹', cls:'lmf-group'}, {match:'Action_2606', label:'SKU 그룹', cls:'sku-group'} ] },
+      { name:'FS_Meta_WEB_NRU_Conv_TBD _2606_perform',   label:'WEB TBD',
+        groups:[ {match:'Action_vid', label:'영상 그룹', cls:'lmf-group'}, {match:'Action_lmf', label:'LMF 그룹', cls:'lmf-group'}, {match:'Action_2606', label:'SKU 그룹', cls:'sku-group'} ] },
+      { name:'FS_Meta_WEB_NRU_Conv_INCU _2606_perform',  label:'WEB INCU',
+        groups:[ {match:'Action_vid', label:'영상 그룹', cls:'lmf-group'}, {match:'Action_lmf', label:'LMF 그룹', cls:'lmf-group'}, {match:'Action_2606', label:'SKU 그룹', cls:'sku-group'} ] },
+      { name:'FS_Meta_WEB_NRU_Conv_INTRO _2606_perform', label:'WEB INTRO',
+        groups:[ {match:'Action_vid', label:'영상 그룹', cls:'lmf-group'}, {match:'Action_lmf', label:'LMF 그룹', cls:'lmf-group'}, {match:'Action_2606', label:'SKU 그룹', cls:'sku-group'} ] },
+      { name:'FS_Meta_iOS_NRU_Conv_AON _2606_perform',   label:'iOS AON',
+        groups:[ {match:'Action_vid', label:'영상 그룹', cls:'lmf-group'}, {match:'Action_lmf', label:'LMF 그룹', cls:'lmf-group'}, {match:'Action_2606', label:'SKU 그룹', cls:'sku-group'} ] },
     ]
   },
   {
     key:'toss', label:'토스', color:'#00B8A9', cls:'c-toss',
     campaigns:[
-      { name:'FS_Toss_App_NRU_List_banner_AON_2606_perform', label:'리스트 배너' },
-      { name:'FS_Toss_App_NRU_Board_banner_AON_2604',        label:'보드 배너' },
+      { name:'FS_Toss_App_NRU_List_banner_AON_2606_perform', label:'리스트 배너',
+        groups:[
+          {match:'DMP_Toss_Leadgen_2', label:'Leadgen 2', cls:'default-group'},
+          {match:'DMP_Toss_Leadgen',   label:'Leadgen',   cls:'sku-group'},
+        ] },
+      { name:'FS_Toss_App_NRU_Board_banner_AON_2604',        label:'보드 배너',
+        groups:[
+          {match:'DMP_Toss_Leadgen_2', label:'Leadgen 2', cls:'default-group'},
+          {match:'DMP_Toss_Leadgen',   label:'Leadgen',   cls:'sku-group'},
+        ] },
     ]
   },
   {
@@ -280,24 +293,56 @@ const SKU_MAP = {
 };
 
 // ── 소재명 파싱 ─────────────────────────────────────────
-function parseCreative(name) {
+// 메타 전용 SKU 맵
+const META_SKU_MAP = {
+  kogizip:'꼭이집', wine:'와인명규', sushi:'스시어항', ai:'AI영상', typo:'타이포영상',
+};
+// 메타 소재 여부 판별 (캠페인명으로)
+function isMetaCreative(campaign) {
+  return (campaign||'').includes('Meta');
+}
+
+function parseCreative(name, campaign) {
   if (!name) return { tags:[] };
   const tags = [];
-  // 수도권: _S(CJ|DB) 패턴 (한 번만)
-  if (/_S(?:CJ|DB)/i.test(name)) tags.push({type:'region', label:'수도권'});
-  // 거래처
-  if (/CJ/i.test(name)) tags.push({type:'partner-cj', label:'CJFW'});
-  else if (/DB/i.test(name)) tags.push({type:'partner-db', label:'다봄푸드'});
-  // 버전 A/B: _A_ 또는 _B_ 패턴
-  const ver = name.match(/_([AB])_/i);
-  if (ver) {
-    const v = ver[1].toUpperCase();
-    tags.push({type: v==='A' ? 'ver-a' : 'ver-b', label:`버전 ${v}`});
-  }
-  // SKU
   const lower = name.toLowerCase();
-  for (const [key, val] of Object.entries(SKU_MAP)) {
-    if (lower.includes(key)) { tags.push({type:'sku', label:val}); break; }
+
+  if (isMetaCreative(campaign)) {
+    // 메타 전용 파싱
+    // 영상 소재: vid 포함
+    const isVid = lower.includes('vid');
+    // 거래처: SKU명 앞에 D가 붙으면 다봄푸드, 없으면 CJ (vid 소재는 제외)
+    if (!isVid) {
+      // D+SKU 패턴 체크
+      const hasD = /[_-]d(?:kogizip|wine|sushi|ai|typo)/i.test(name);
+      if (hasD) tags.push({type:'partner-db', label:'다봄푸드'});
+      else tags.push({type:'partner-cj', label:'CJFW'});
+    }
+    // 영상 타입 태그
+    if (isVid) tags.push({type:'sku', label:'영상소재'});
+    // 메타 SKU
+    for (const [key, val] of Object.entries(META_SKU_MAP)) {
+      if (lower.includes(key)) { tags.push({type:'sku', label:val}); break; }
+    }
+    // A/B 버전: wine_A, sushi_B 등 SKU명 뒤 알파벳
+    const verMatch = name.match(/(?:kogizip|wine|sushi|ai|typo)([AB])/i);
+    if (verMatch) {
+      const v = verMatch[1].toUpperCase();
+      tags.push({type: v==='A' ? 'ver-a' : 'ver-b', label:`버전 ${v}`});
+    }
+  } else {
+    // 기존 파싱 (네이버/카카오/카페 등)
+    if (/_S(?:CJ|DB)/i.test(name)) tags.push({type:'region', label:'수도권'});
+    if (/CJ/i.test(name)) tags.push({type:'partner-cj', label:'CJFW'});
+    else if (/DB/i.test(name)) tags.push({type:'partner-db', label:'다봄푸드'});
+    const ver = name.match(/_([AB])_/i);
+    if (ver) {
+      const v = ver[1].toUpperCase();
+      tags.push({type: v==='A' ? 'ver-a' : 'ver-b', label:`버전 ${v}`});
+    }
+    for (const [key, val] of Object.entries(SKU_MAP)) {
+      if (lower.includes(key)) { tags.push({type:'sku', label:val}); break; }
+    }
   }
   return { tags };
 }
@@ -341,7 +386,7 @@ function updateKPI(rows) {
   document.getElementById('k-cac').textContent      = cac !== null ? fC(cac) : '—';
   document.getElementById('k-cac-sub').textContent  = cac !== null ? fC(cost) + ' ÷ ' + fN(purchase) : '첫구매 없음';
   // 카페 탭에서는 비용/CAC 카드 숨김
-  const isCafeTab = activeTab === 'cafe';
+  const isCafeTab = ['cafe','toss','danggeun'].includes(activeTab);
   document.getElementById('k-cost').closest('.kpi-card').style.display = isCafeTab ? 'none' : '';
   document.getElementById('k-cac').closest('.kpi-card').style.display  = isCafeTab ? 'none' : '';
 }
@@ -459,7 +504,8 @@ function renderSummary(){
       const cRows=mRows.filter(r=>matchCamp(r[key], c));
       const ci=sum(cRows,'install'),cs=sum(cRows,'signup'),cp=sum(cRows,'purchase'),cc=sum(cRows,'cost');
       const empty=ci===0&&cs===0&&cp===0&&cc===0;
-      const costLine = m.key === 'cafe' ? '' : `<div class="camp-cost">비용 <b>${fC(cc)}</b></div>`;
+      const noCost = ['cafe','toss','danggeun'].includes(m.key);
+      const costLine = noCost ? '' : `<div class="camp-cost">비용 <b>${fC(cc)}</b></div>`;
       cards+=`<div class="camp-card ${m.cls}${empty?' zero-card':''}">
         <div class="camp-tag ${m.cls}">${c.label}</div>
         <div class="camp-metrics">
@@ -474,7 +520,7 @@ function renderSummary(){
       <div class="media-header">
         <span class="media-dot" style="background:${m.color}"></span>
         <span class="media-label">${m.label}</span>
-        <div class="media-total">설치 <b>${fN(mi)}</b> 가입 <b>${fN(ms)}</b> 첫구매 <b>${fN(mp)}</b>${m.key !== 'cafe' ? ' 비용 <b>' + fC(mc) + '</b>' : ''}</div>
+        <div class="media-total">설치 <b>${fN(mi)}</b> 가입 <b>${fN(ms)}</b> 첫구매 <b>${fN(mp)}</b>${!['cafe','toss','danggeun'].includes(m.key) ? ' 비용 <b>' + fC(mc) + '</b>' : ''}</div>
       </div>
       <div class="campaign-grid">${cards}</div>
     </div>`;
@@ -511,7 +557,7 @@ function renderDetail(mediaKey){
               <span class="adgroup-name">${g.label}</span>
               <div class="adgroup-stats">설치 <b>${fN(gi)}</b> · 가입 <b>${fN(gs)}</b> · 첫구매 <b>${fN(gp)}</b> · 비용 <b>${fC(gc)}</b></div>
             </div>
-            <div class="table-wrap">${buildTable(convRows, m.key==='cafe')}</div>
+            <div class="table-wrap">${buildTable(convRows, ['cafe','toss','danggeun'].includes(m.key))}</div>
           </div>`;
       }
       // 어느 그룹에도 안 속한 전환 소재
@@ -521,7 +567,7 @@ function renderDetail(mediaKey){
         groupSections+=`
           <div class="adgroup-section">
             <div class="adgroup-header default-group"><span class="adgroup-name">기타</span></div>
-            <div class="table-wrap">${buildTable(otherRows, m.key==='cafe')}</div>
+            <div class="table-wrap">${buildTable(otherRows, ['cafe','toss','danggeun'].includes(m.key))}</div>
           </div>`;
       }
     } else {
@@ -529,7 +575,7 @@ function renderDetail(mediaKey){
       const convRows=cRows.filter(r=>r.creative&&hasConv(r))
         .sort((a,b)=>(b.purchase-a.purchase)||(b.signup-a.signup)||(b.install-a.install));
       if(convRows.length){
-        groupSections+=`<div class="table-wrap">${buildTable(convRows, m.key==='cafe')}</div>`;
+        groupSections+=`<div class="table-wrap">${buildTable(convRows, ['cafe','toss','danggeun'].includes(m.key))}</div>`;
       }
     }
 
@@ -551,7 +597,7 @@ function renderDetail(mediaKey){
 function buildTable(rows, isCafe){
   if(!rows||rows.length===0) return '';
   const trs=rows.map(r=>{
-    const {tags}=parseCreative(r.creative);
+    const {tags}=parseCreative(r.creative, r.campaign);
     const convBadges=[
       r.install>0?`<span class="badge b-i">설치 ${r.install}</span>`:'',
       r.signup>0?`<span class="badge b-s">가입 ${r.signup}</span>`:'',
