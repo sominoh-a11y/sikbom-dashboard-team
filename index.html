@@ -329,8 +329,9 @@ function parseCreative(name, campaign) {
     for (const [key, val] of Object.entries(META_SKU_MAP)) {
       if (lower.includes(key)) { tags.push({type:'sku', label:val}); break; }
     }
-    // A/B 버전: wine_A, sushi_B 등 SKU명 뒤 알파벳
-    const verMatch = name.match(/(?:kogizip|wine|sushi|ai|typo)([AB])/i);
+    // A/B 버전: SKU명 바로 뒤 A/B (wineA, wine_A, wine_B 등)
+    const allSkuKeys = Object.keys(META_SKU_MAP).join('|');
+    const verMatch = name.match(new RegExp('(?:' + allSkuKeys + ')[_]?([AB])(?:[_\d]|$)', 'i'));
     if (verMatch) {
       const v = verMatch[1].toUpperCase();
       tags.push({type: v==='A' ? 'ver-a' : 'ver-b', label:`버전 ${v}`});
@@ -557,14 +558,17 @@ function renderDetail(mediaKey){
           const grp = r.group||'';
           // match가 비어있으면 아직 매칭 안 된 것들
           if(g.match==='') return !matchedCreatives.has(r.campaign+'||'+r.group+'||'+r.creative);
-          // 정확히 일치하거나, match 뒤에 바로 비알파벳이 오는 경우만 매칭 (Leadgen이 Leadgen_2에 매칭 안 되도록)
-          return grp === g.match || (grp.startsWith(g.match) && (grp.length===g.match.length || !/[a-zA-Z0-9]/.test(grp[g.match.length])));
+          // 이미 더 구체적인 그룹에 매칭된 row 제외
+          if(matchedCreatives.has(r.campaign+'||'+r.group+'||'+r.creative)) return false;
+          // includes로 매칭 (단, 같은 그룹 내 더 긴 match가 먼저 걸러지도록 순서로 처리)
+          return grp.includes(g.match);
         });
         // 전환 있는 소재만
         const convRows=gRows.filter(r=>r.creative&&hasConv(r))
           .sort((a,b)=>(b.purchase-a.purchase)||(b.signup-a.signup)||(b.install-a.install));
+        // gRows 전체를 matched에 등록 (전환 없는 소재도 다음 그룹에서 중복 매칭 방지)
+        gRows.forEach(r=>matchedCreatives.add(r.campaign+'||'+r.group+'||'+r.creative));
         if(convRows.length===0) continue; // 전환 없으면 그룹 자체 숨김
-        convRows.forEach(r=>matchedCreatives.add(r.campaign+'||'+r.group+'||'+r.creative));
         const gi=sum(gRows,'install'),gs=sum(gRows,'signup'),gp=sum(gRows,'purchase'),gc=sum(gRows,'cost');
         groupSections+=`
           <div class="adgroup-section">
