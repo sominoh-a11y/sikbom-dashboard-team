@@ -315,27 +315,30 @@ function parseCreative(name, campaign) {
 
   if (isMetaCreative(campaign)) {
     // 메타 전용 파싱
-    // 영상 소재: vid 포함
     const isVid = lower.includes('vid');
-    // 거래처: SKU명 앞에 D가 붙으면 다봄푸드, 없으면 CJ (vid 소재는 제외)
+    // 1. 거래처 (vid 소재 제외)
     if (!isVid) {
-      // D+SKU 패턴 체크
       const hasD = /[_-]D(?:kogizip|wine|sushi|ai|typo|shrimp|mayo|colazero|onmirice|uglyyuksu|vinyl|happyoil|healthoil|ssammu|ssammmu|mdgrice)/i.test(name);
       if (hasD) tags.push({type:'partner-db', label:'다봄푸드'});
       else tags.push({type:'partner-cj', label:'CJFW'});
     }
-    // 영상 타입 태그
-    if (isVid) tags.push({type:'vid', label:'영상소재'});
-    // 메타 SKU
-    for (const [key, val] of Object.entries(META_SKU_MAP)) {
-      if (lower.includes(key)) { tags.push({type:'sku', label:val}); break; }
-    }
-    // A/B 버전: SKU명 바로 뒤 A/B (wineA, wine_A, wine_B 등)
+    // 2. 버전 A/B — SKU/영상명보다 앞
     const allSkuKeys = Object.keys(META_SKU_MAP).join('|');
     const verMatch = name.match(new RegExp('(?:' + allSkuKeys + ')[_]?([AB])(?:[_\d]|$)', 'i'));
     if (verMatch) {
       const v = verMatch[1].toUpperCase();
       tags.push({type: v==='A' ? 'ver-a' : 'ver-b', label:`버전 ${v}`});
+    }
+    // 3. 영상소재 태그 or SKU명
+    if (isVid) {
+      tags.push({type:'vid', label:'영상소재'});
+      for (const [key, val] of Object.entries(META_SKU_MAP)) {
+        if (lower.includes(key) && key!=='ai' && key!=='typo') { tags.push({type:'vid', label:val}); break; }
+      }
+    } else {
+      for (const [key, val] of Object.entries(META_SKU_MAP)) {
+        if (lower.includes(key)) { tags.push({type:'sku', label:val}); break; }
+      }
     }
   } else {
     // 기존 파싱 (네이버/카카오/카페 등)
