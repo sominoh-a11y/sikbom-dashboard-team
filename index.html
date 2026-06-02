@@ -549,19 +549,28 @@ function renderDetail(mediaKey){
     // 광고그룹 서브섹션 구성
     let groupSections='';
     if(c.groups && c.groups.length){
+      // 이미 매칭된 row 추적 (중복 방지)
+      const matchedCreatives = new Set();
       for(const g of c.groups){
-        // 광고그룹명에 match 키워드 포함 여부
-        const gRows=cRows.filter(r=>(r.group||'').includes(g.match));
+        // 정확한 그룹명 매칭 (includes 대신 === 또는 startsWith로 중복 방지)
+        const gRows=cRows.filter(r=>{
+          const grp = r.group||'';
+          // match가 비어있으면 아직 매칭 안 된 것들
+          if(g.match==='') return !matchedCreatives.has(r.campaign+'||'+r.group+'||'+r.creative);
+          // 정확히 일치하거나, match 뒤에 바로 비알파벳이 오는 경우만 매칭 (Leadgen이 Leadgen_2에 매칭 안 되도록)
+          return grp === g.match || (grp.startsWith(g.match) && (grp.length===g.match.length || !/[a-zA-Z0-9]/.test(grp[g.match.length])));
+        });
         // 전환 있는 소재만
         const convRows=gRows.filter(r=>r.creative&&hasConv(r))
           .sort((a,b)=>(b.purchase-a.purchase)||(b.signup-a.signup)||(b.install-a.install));
         if(convRows.length===0) continue; // 전환 없으면 그룹 자체 숨김
+        convRows.forEach(r=>matchedCreatives.add(r.campaign+'||'+r.group+'||'+r.creative));
         const gi=sum(gRows,'install'),gs=sum(gRows,'signup'),gp=sum(gRows,'purchase'),gc=sum(gRows,'cost');
         groupSections+=`
           <div class="adgroup-section">
             <div class="adgroup-header ${g.cls}">
               <span class="adgroup-name">${g.label}</span>
-              <div class="adgroup-stats">설치 <b>${fN(gi)}</b> · 가입 <b>${fN(gs)}</b> · 첫구매 <b>${fN(gp)}</b> · 비용 <b>${fC(gc)}</b></div>
+              <div class="adgroup-stats">설치 <b>${fN(gi)}</b> · 가입 <b>${fN(gs)}</b> · 첫구매 <b>${fN(gp)}</b>${!['cafe','toss','danggeun'].includes(m.key) ? ' · 비용 <b>' + fC(gc) + '</b>' : ''}</div>
             </div>
             <div class="table-wrap">${buildTable(convRows, ['cafe','toss','danggeun'].includes(m.key))}</div>
           </div>`;
@@ -591,7 +600,7 @@ function renderDetail(mediaKey){
       <div class="camp-header">
         <span class="camp-header-dot" style="background:${m.color}"></span>
         <span class="camp-header-name">${c.label}</span>
-        <div class="camp-header-stats">설치 <b>${fN(ci)}</b> · 가입 <b>${fN(cs)}</b> · 첫구매 <b>${fN(cp)}</b> · 비용 <b>${fC(cc)}</b></div>
+        <div class="camp-header-stats">설치 <b>${fN(ci)}</b> · 가입 <b>${fN(cs)}</b> · 첫구매 <b>${fN(cp)}</b>${!['cafe','toss','danggeun'].includes(m.key) ? ' · 비용 <b>' + fC(cc) + '</b>' : ''}</div>
       </div>
       ${groupSections}
     </div>`;
