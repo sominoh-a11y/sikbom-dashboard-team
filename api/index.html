@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>식봄 · 매체별 전환 현황 (팀용)</title>
+<style>
+  :root {
+    --bg:#f7f7f5;--surface:#fff;--surface2:#f0efec;
+    --border:rgba(0,0,0,.09);--border2:rgba(0,0,0,.16);
+    --text:#1a1a18;--text2:#6b6b68;--text3:#9e9e9a;
+    --blue:#378ADD;--blue-dark:#185FA5;--blue-bg:#E6F1FB;--blue-text:#0C447C;
+    --green:#1D9E75;--green-bg:#EAF3DE;--green-text:#27500A;
+    --amber:#EFAA00;--amber-bg:#FAEEDA;--amber-text:#633806;
+    --coral:#D85A30;--r:10px;--rs:6px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+  #app{max-width:960px;margin:0 auto;padding:2rem 1.25rem 4rem}
+
+  /* 헤더 */
+  .hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:12px}
+  .hdr h1{font-size:18px;font-weight:500}
+  .hdr p{font-size:12px;color:var(--text2);margin-top:3px}
+  .hdr-r{display:flex;align-items:center;gap:8px}
+  .date-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--surface);border:.5px solid var(--border2);border-radius:var(--rs);font-size:13px;cursor:pointer;color:var(--text)}
+  .date-btn:hover{border-color:var(--blue)}
+  .cal-wrap{position:relative}
+  .cal-popup{display:none;position:absolute;right:0;top:40px;z-index:20;background:var(--surface);border:.5px solid var(--border2);border-radius:var(--r);padding:12px;width:268px;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+  .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .cal-nav-btn{background:none;border:none;cursor:pointer;color:var(--text2);font-size:18px;padding:2px 8px;border-radius:4px;line-height:1}
+  .cal-nav-btn:hover{background:var(--surface2)}
+  .cal-month{font-size:13px;font-weight:500}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+  .cal-head{font-size:11px;color:var(--text3);text-align:center;padding:3px 0}
+  .cal-day{font-size:12px;text-align:center;padding:6px 2px;border-radius:5px;cursor:pointer;color:var(--text)}
+  .cal-day:hover{background:var(--surface2)}
+  .cal-day.today{border:1px solid var(--border2)}
+  .cal-day.selected{background:var(--blue);color:#fff}
+  .cal-day.empty{cursor:default}
+  .run-btn{padding:7px 20px;background:var(--blue);color:#fff;border:none;border-radius:var(--rs);font-size:13px;cursor:pointer}
+  .run-btn:disabled{opacity:.45;cursor:not-allowed}
+  .run-btn:hover:not(:disabled){background:var(--blue-dark)}
+
+  /* 탭 */
+  .tabs{display:flex;gap:4px;margin-bottom:1.5rem;border-bottom:1px solid var(--border2)}
+  .tab-btn{padding:8px 16px;font-size:13px;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;color:var(--text2)}
+  .tab-btn:hover{color:var(--text)}
+  .tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:500}
+
+  /* KPI */
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.75rem}
+  .kpi-card{background:var(--surface2);border-radius:var(--rs);padding:14px 16px}
+  .kpi-label{font-size:10px;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+  .kpi-val{font-size:22px;font-weight:500;letter-spacing:-.5px}
+  .kpi-sub{font-size:11px;color:var(--text3);margin-top:3px}
+
+  /* 요약탭 */
+  .media-section{margin-bottom:1.75rem}
+  .media-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid var(--border2)}
+  .media-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .media-label{font-size:14px;font-weight:500}
+  .media-total{margin-left:auto;display:flex;gap:14px;font-size:12px;color:var(--text2)}
+  .media-total b{color:var(--text);font-weight:500}
+  .campaign-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+  .camp-card{background:var(--surface);border:.5px solid var(--border);border-radius:var(--r);padding:12px 14px;position:relative;overflow:hidden}
+  .camp-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+  .camp-card.c-naver::before{background:#1D9E75}
+  .camp-card.c-kakao::before{background:#EFAA00}
+  .camp-card.c-cafe::before{background:#D85A30}
+  .camp-card.c-meta::before{background:#1877F2}
+  .camp-card.c-toss::before{background:#0064FF}
+  .camp-card.c-danggeun::before{background:#FF6F0F}
+  .camp-tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;margin-bottom:8px;font-weight:500}
+  .camp-tag.c-naver{background:#EAF3DE;color:#1D9E75}
+  .camp-tag.c-kakao{background:#FAEEDA;color:#a06800}
+  .camp-tag.c-cafe{background:#FDEAE4;color:#D85A30}
+  .camp-tag.c-meta{background:#E7F0FF;color:#1877F2}
+  .camp-tag.c-toss{background:#E6F0FF;color:#0064FF}
+  .camp-tag.c-danggeun{background:#FFF0E6;color:#FF6F0F}
+  .camp-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .camp-m-lbl{font-size:10px;color:var(--text3);margin-bottom:1px}
+  .camp-m-val{font-weight:500;font-size:13px}
+  .camp-cost{margin-top:8px;padding-top:6px;border-top:.5px solid var(--border);font-size:11px;color:var(--text2);display:flex;justify-content:space-between}
+  .camp-cost b{font-weight:500;color:var(--text)}
+  .zero-card{opacity:.4}
+
+  /* 상세탭 */
+  .detail-section{margin-bottom:2rem}
+  .camp-header{display:flex;align-items:center;gap:8px;padding:10px 0 8px;border-bottom:1.5px solid var(--border2);margin-bottom:0}
+  .camp-header-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .camp-header-name{font-size:14px;font-weight:500}
+  .camp-header-stats{margin-left:auto;font-size:11px;color:var(--text2);display:flex;gap:10px}
+  .camp-header-stats b{color:var(--text);font-weight:500}
+
+  /* 광고그룹 서브섹션 */
+  .adgroup-section{margin-bottom:4px}
+  .adgroup-header{display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--surface2);border-left:3px solid var(--border2);margin-top:1px}
+  .adgroup-header.sku-group{border-left-color:#378ADD}
+  .adgroup-header.lmf-group{border-left-color:#9B59B6}
+  .adgroup-header.default-group{border-left-color:var(--border2)}
+  .adgroup-name{font-size:12px;font-weight:500;color:var(--text2)}
+  .adgroup-stats{margin-left:auto;font-size:11px;color:var(--text2);display:flex;gap:8px}
+  .adgroup-stats b{color:var(--text);font-weight:500}
+
+  /* 소재 테이블 */
+  .table-wrap{overflow-x:auto;border:.5px solid var(--border);border-radius:0 0 var(--rs) var(--rs);margin-bottom:0}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border2);color:var(--text2);font-weight:400;font-size:11px;background:var(--surface2);white-space:nowrap}
+  td{padding:7px 10px;border-bottom:.5px solid var(--border);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--surface2)}
+
+  /* 배지 */
+  .badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;margin:1px 2px}
+  .b-i{background:var(--blue-bg);color:var(--blue-text)}
+  .b-s{background:var(--green-bg);color:var(--green-text)}
+  .b-p{background:var(--amber-bg);color:var(--amber-text)}
+
+  /* 소재 태그 */
+  .ctags{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
+  .ctag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:3px;border:.5px solid var(--border2);background:var(--surface2);color:var(--text2)}
+  .ctag.region{background:#EEF2FF;color:#3730a3;border-color:#c7d2fe}
+  .ctag.partner-cj{background:#ECFDF5;color:#065f46;border-color:#6ee7b7;font-weight:500}
+  .ctag.partner-db{background:#FFF1F2;color:#9f1239;border-color:#fda4af;font-weight:500}
+  .ctag.sku{background:#FFF7ED;color:#c2410c;border-color:#fed7aa}
+  .ctag.ver-a{background:#EFF6FF;color:#1d4ed8;border-color:#93c5fd;font-weight:500}
+  .ctag.ver-b{background:#F0F9FF;color:#0369a1;border-color:#7dd3fc;font-weight:500}
+
+  .status{text-align:center;padding:2.5rem;color:var(--text2);font-size:13px;background:var(--surface2);border-radius:var(--r)}
+  .error{background:#FCEBEB;color:#A32D2D;padding:1rem 1.25rem;border-radius:var(--rs);font-size:13px}
+  .spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:5px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  /* 비번 */
+  #pw-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
+  .pw-box{background:var(--surface);border:.5px solid var(--border2);border-radius:var(--r);padding:2rem 2.5rem;width:320px;text-align:center}
+  .pw-box h2{font-size:15px;font-weight:500;margin-bottom:4px}
+  .pw-box p{font-size:12px;color:var(--text2);margin-bottom:1.5rem}
+  .pw-box input{width:100%;padding:9px 12px;border:.5px solid var(--border2);border-radius:var(--rs);font-size:14px;text-align:center;outline:none;background:var(--surface);color:var(--text)}
+  .pw-box input:focus{border-color:var(--blue)}
+  .pw-box button{margin-top:10px;width:100%;padding:9px;background:var(--blue);color:#fff;border:none;border-radius:var(--rs);font-size:14px;cursor:pointer}
+  .pw-box button:hover{background:var(--blue-dark)}
+  .pw-err{font-size:12px;color:#A32D2D;margin-top:8px;display:none}
+  #main-content{display:none}
+  @media(max-width:600px){
+    .hdr{flex-direction:column}
+    .kpi-grid{grid-template-columns:repeat(2,1fr)}
+    .campaign-grid{grid-template-columns:1fr 1fr}
+    .media-total,.camp-header-stats,.adgroup-stats{display:none}
+    .tabs{overflow-x:auto}
+  }
+</style>
+</head>
+<body>
+<div id="pw-screen">
+  <div class="pw-box">
+    <h2>식봄 자동 리포트</h2>
+    <p>운영팀 전용 · 접속 비밀번호를 입력하세요</p>
+    <input type="password" id="pw-input" placeholder="••••••" onkeydown="if(event.key==='Enter')checkPw()">
+    <button onclick="checkPw()">확인</button>
+    <div class="pw-err" id="pw-err">비밀번호가 틀렸습니다</div>
+  </div>
+</div>
+<div id="app" style="display:none">
+  <div class="hdr">
+    <div>
+      <h1>식봄 · 매체별 전환 현황</h1>
+      <p id="date-label">날짜를 선택하세요</p>
+    </div>
+    <div class="hdr-r">
+      <div class="cal-wrap">
+        <button class="date-btn" id="cal-toggle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span id="cal-label">날짜 선택</span>
+        </button>
+        <div class="cal-popup" id="cal-popup">
+          <div class="cal-nav">
+            <button class="cal-nav-btn" id="prev-m">‹</button>
+            <span class="cal-month" id="cal-month"></span>
+            <button class="cal-nav-btn" id="next-m">›</button>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+      </div>
+      <button class="run-btn" id="run-btn" disabled onclick="fetchData()">조회</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="summary">전체 요약</button>
+    <button class="tab-btn" data-tab="naver_gfa">네이버 GFA</button>
+    <button class="tab-btn" data-tab="kakao">카카오</button>
+    <button class="tab-btn" data-tab="meta">메타</button>
+    <button class="tab-btn" data-tab="toss">토스</button>
+    <button class="tab-btn" data-tab="danggeun">당근</button>
+    <button class="tab-btn" data-tab="cafe">카페커뮤니티</button>
+  </div>
+
+  <div id="status-area"><div class="status">날짜를 선택하고 조회를 눌러주세요</div></div>
+
+  <div id="main-content">
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">인스톨</div><div class="kpi-val" id="k-install">—</div><div class="kpi-sub" id="k-install-sub">전체 합산</div></div>
+      <div class="kpi-card"><div class="kpi-label">회원가입</div><div class="kpi-val" id="k-signup">—</div><div class="kpi-sub" id="k-signup-sub">App+Web</div></div>
+      <div class="kpi-card"><div class="kpi-label">첫구매</div><div class="kpi-val" id="k-purchase">—</div><div class="kpi-sub" id="k-purchase-sub">firstPurchase</div></div>
+      <div class="kpi-card"><div class="kpi-label">총 소진 비용</div><div class="kpi-val" id="k-cost">—</div><div class="kpi-sub" id="k-cost-sub">cost_channel</div></div>
+      <div class="kpi-card"><div class="kpi-label">첫구매 CAC</div><div class="kpi-val" id="k-cac">—</div><div class="kpi-sub" id="k-cac-sub">비용 ÷ 첫구매</div></div>
+    </div>
+    <div id="tab-content"></div>
+  </div>
+</div>
+
+<script>
+// ── 설정 ───────────────────────────────────────────────
+const MEDIA = [
+  {
+    key:'naver_gfa', label:'네이버 GFA', color:'#1D9E75', cls:'c-naver',
+    campaigns:[
+      { name:'FS_Naver_Web_NRU_Native_perform',  label:'네이티브',
+        groups:[ {match:'ITIM', label:'ITIM 오디언스', cls:'default-group'} ] },
+      { name:'FS_Naver_Web_NRU_Commu_perform',   label:'커뮤애드',
+        groups:[ {match:'SKU',  label:'SKU 그룹',  cls:'sku-group'}, {match:'LMF', label:'LMF 그룹', cls:'lmf-group'} ] },
+      { name:'FS_Naver_Web_NRU_Advoost_perform', label:'애드부스트',
+        groups:[ {match:'KW',   label:'KW 오디언스', cls:'default-group'} ] },
+    ]
+  },
+  {
+    key:'kakao', label:'카카오', color:'#EFAA00', cls:'c-kakao',
+    campaigns:[
+      { name:'FS_Kakao_AOS_NRU_Biz_AON_perform',   label:'비즈보드', aliases:['FS_Kakao_AOS_NRU_Biz_AON_perform','FS_Kakao_AOS_NRU_Biz_AON_2606_perform'],
+        groups:[ {match:'CJFW', label:'CJFW 그룹', cls:'default-group'}, {match:'DB', label:'다봄푸드 그룹', cls:'default-group'} ] },
+      { name:'FS_Kakao_Web_NRU_Native_AON_perform', label:'네이티브',
+        groups:[ {match:'CJFW', label:'CJFW 그룹', cls:'default-group'}, {match:'DB', label:'다봄푸드 그룹', cls:'default-group'} ] },
+    ]
+  },
+  {
+    key:'meta', label:'메타', color:'#1877F2', cls:'c-meta',
+    campaigns:[
+      { name:'FS_Meta_WEB_NRU_Conv_AON _2606_perform',   label:'WEB AON' },
+      { name:'FS_Meta_WEB_NRU_Conv_TBD _2606_perform',   label:'WEB TBD' },
+      { name:'FS_Meta_WEB_NRU_Conv_INCU _2606_perform',  label:'WEB INCU' },
+      { name:'FS_Meta_WEB_NRU_Conv_INTRO _2606_perform', label:'WEB INTRO' },
+      { name:'FS_Meta_iOS_NRU_Conv_AON _2606_perform',   label:'iOS AON' },
+    ]
+  },
+  {
+    key:'toss', label:'토스', color:'#0064FF', cls:'c-toss',
+    campaigns:[
+      { name:'FS_Toss_App_NRU_List_banner_AON_2606_perform', label:'리스트 배너' },
+      { name:'FS_Toss_App_NRU_Board_banner_AON_2604',        label:'보드 배너' },
+    ]
+  },
+  {
+    key:'danggeun', label:'당근', color:'#FF6F0F', cls:'c-danggeun',
+    campaigns:[
+      { name:'FS_Danggeun_Web_NRU_FirstPurchase_2606_perform', label:'당근 NRU',
+        groups:[
+          { match:'Central_DT', label:'Central (수도권)', cls:'default-group' },
+          { match:'EAST_DT',    label:'East (동부)',      cls:'default-group' },
+        ]
+      },
+    ]
+  },
+  {
+    key:'cafe', label:'카페커뮤니티', color:'#D85A30', cls:'c-cafe',
+    isGroup:true,
+    campaigns:[
+      { name:'2605_cafe_noinyoyang', label:'노인요양' },
+      { name:'2605_cafe_asajang',    label:'아사장' },
+      { name:'2605_comm_yysdoumi',   label:'영양사도우미' },
+    ]
+  },
+];
+
+const SKU_MAP = {
+  onmirice:'온미쌀', uglyyuksu:'냉면육수', vinyl:'배달봉투',
+  shrimp:'칵테일새우', mayo:'마요', colazero:'제로콜라',
+  happyoil:'행복콩식용유', healthoil:'건강대두유',
+  ssammu:'냉면쌈무', ssammmu:'냉면쌈무', mdgrice:'메뚜기쌀',
+};
+
+// ── 소재명 파싱 ─────────────────────────────────────────
+function parseCreative(name) {
+  if (!name) return { tags:[] };
+  const tags = [];
+  // 수도권: _S(CJ|DB) 패턴 (한 번만)
+  if (/_S(?:CJ|DB)/i.test(name)) tags.push({type:'region', label:'수도권'});
+  // 거래처
+  if (/CJ/i.test(name)) tags.push({type:'partner-cj', label:'CJFW'});
+  else if (/DB/i.test(name)) tags.push({type:'partner-db', label:'다봄푸드'});
+  // 버전 A/B: _A_ 또는 _B_ 패턴
+  const ver = name.match(/_([AB])_/i);
+  if (ver) {
+    const v = ver[1].toUpperCase();
+    tags.push({type: v==='A' ? 'ver-a' : 'ver-b', label:`버전 ${v}`});
+  }
+  // SKU
+  const lower = name.toLowerCase();
+  for (const [key, val] of Object.entries(SKU_MAP)) {
+    if (lower.includes(key)) { tags.push({type:'sku', label:val}); break; }
+  }
+  return { tags };
+}
+
+// ── 분류 ───────────────────────────────────────────────
+function classifyRow(r) {
+  for (const m of MEDIA) {
+    const key = m.isGroup ? 'group' : 'campaign';
+    if (m.campaigns.some(c => matchCamp(r[key], c))) return m.key;
+  }
+  return 'other';
+}
+function matchCamp(val, c) {
+  const v = val || '';
+  if (c.aliases) return c.aliases.some(a => v === a || v.includes(a) || a.includes(v));
+  return v === c.name || v.includes(c.name) || c.name.includes(v);
+}
+
+// ── 유틸 ───────────────────────────────────────────────
+const sum = (rows, k) => rows.reduce((a,r) => a+(Number(r[k])||0), 0);
+const fN = n => n ? Number(n).toLocaleString('ko-KR') : '0';
+const fC = n => n ? '₩'+Number(Math.round(n)).toLocaleString('ko-KR') : '₩0';
+const hasConv = r => r.install||r.signup||r.purchase;
+
+// ── KPI 업데이트 ────────────────────────────────────────
+function updateKPI(rows) {
+  const install  = sum(rows, 'install');
+  const signup   = sum(rows, 'signup');
+  const purchase = sum(rows, 'purchase');
+  const cost     = sum(rows, 'cost');
+  const cac      = purchase > 0 ? Math.round(cost / purchase) : null;
+  const label    = activeTab === 'summary' ? '전체 합산' : (MEDIA.find(m=>m.key===activeTab)?.label||'');
+  document.getElementById('k-install').textContent  = fN(install);
+  document.getElementById('k-install-sub').textContent = label;
+  document.getElementById('k-signup').textContent   = fN(signup);
+  document.getElementById('k-signup-sub').textContent  = label;
+  document.getElementById('k-purchase').textContent = fN(purchase);
+  document.getElementById('k-purchase-sub').textContent = label;
+  document.getElementById('k-cost').textContent     = fC(cost);
+  document.getElementById('k-cost-sub').textContent  = label;
+  document.getElementById('k-cac').textContent      = cac !== null ? fC(cac) : '—';
+  document.getElementById('k-cac-sub').textContent  = cac !== null ? fC(cost) + ' ÷ ' + fN(purchase) : '첫구매 없음';
+  // 카페 탭에서는 비용/CAC 카드 숨김
+  const isCafeTab = activeTab === 'cafe';
+  document.getElementById('k-cost').closest('.kpi-card').style.display = isCafeTab ? 'none' : '';
+  document.getElementById('k-cac').closest('.kpi-card').style.display  = isCafeTab ? 'none' : '';
+}
+
+// ── 탭 ─────────────────────────────────────────────────
+let activeTab = 'summary', allRows = [];
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeTab = btn.dataset.tab;
+    if (document.getElementById('main-content').style.display !== 'none') {
+      const tabRows = activeTab === 'summary' ? allRows : allRows.filter(r => classifyRow(r) === activeTab);
+      updateKPI(tabRows);
+      renderTab();
+    }
+  });
+});
+
+// ── 날짜 ───────────────────────────────────────────────
+let selDate = null;
+const today = new Date();
+let calY = today.getFullYear(), calM = today.getMonth();
+function toKST(d) {
+  const k = new Date(d.toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+  return `${k.getFullYear()}-${String(k.getMonth()+1).padStart(2,'0')}-${String(k.getDate()).padStart(2,'0')}`;
+}
+function renderCal() {
+  document.getElementById('cal-month').textContent = `${calY}년 ${calM+1}월`;
+  const days=['일','월','화','수','목','금','토'];
+  let html = days.map(d=>`<div class="cal-head">${d}</div>`).join('');
+  const first=new Date(calY,calM,1).getDay(), last=new Date(calY,calM+1,0).getDate();
+  const todayStr=toKST(new Date());
+  for(let i=0;i<first;i++) html+=`<div class="cal-day empty"></div>`;
+  for(let d=1;d<=last;d++){
+    const ds=`${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    html+=`<div class="${['cal-day',ds===todayStr?'today':'',ds===selDate?'selected':''].filter(Boolean).join(' ')}" data-date="${ds}">${d}</div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+  document.getElementById('cal-grid').querySelectorAll('[data-date]').forEach(el=>{
+    el.addEventListener('click',()=>selectDate(el.dataset.date));
+  });
+}
+function selectDate(ds){
+  selDate=ds;
+  document.getElementById('cal-label').textContent=ds;
+  document.getElementById('date-label').textContent=`기준일: ${ds} (KST)`;
+  document.getElementById('run-btn').disabled=false;
+  renderCal();
+  document.getElementById('cal-popup').style.display='none';
+}
+document.getElementById('cal-toggle').addEventListener('click',()=>{
+  const p=document.getElementById('cal-popup');
+  const open=p.style.display==='block';
+  p.style.display=open?'none':'block';
+  if(!open) renderCal();
+});
+document.getElementById('prev-m').addEventListener('click',()=>{calM--;if(calM<0){calM=11;calY--;}renderCal();});
+document.getElementById('next-m').addEventListener('click',()=>{calM++;if(calM>11){calM=0;calY++;}renderCal();});
+document.addEventListener('click',e=>{
+  const w=document.querySelector('.cal-wrap');
+  if(w&&!w.contains(e.target)) document.getElementById('cal-popup').style.display='none';
+});
+// 비밀번호 체크
+const PW = 'sikbom2026';
+function checkPw() {
+  if (document.getElementById('pw-input').value === PW) {
+    document.getElementById('pw-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    selectDate(toKST(new Date()));
+  } else {
+    document.getElementById('pw-err').style.display = 'block';
+  }
+}
+
+// ── API ─────────────────────────────────────────────────
+async function fetchData(){
+  const btn=document.getElementById('run-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>조회 중';
+  document.getElementById('status-area').innerHTML='<div class="status">Airbridge 데이터 불러오는 중...</div>';
+  document.getElementById('main-content').style.display='none';
+  try{
+    const res=await fetch(`/api/report?date=${selDate}`);
+    const text=await res.text();
+    let data;
+    try{data=JSON.parse(text);}catch(e){throw new Error('응답 오류: '+text.slice(0,120));}
+    if(!data.ok) throw new Error(data.error||'알 수 없는 오류');
+    allRows=data.rows||[];
+    document.getElementById('main-content').style.display='block';
+    document.getElementById('status-area').innerHTML='';
+    updateKPI(allRows);
+    renderTab();
+  }catch(e){
+    document.getElementById('status-area').innerHTML=`<div class="error">⚠ 오류: ${e.message}</div>`;
+  }finally{
+    btn.disabled=false; btn.innerHTML='조회';
+  }
+}
+
+// ── 탭 렌더 ────────────────────────────────────────────
+function renderTab(){
+  if(activeTab==='summary') renderSummary();
+  else renderDetail(activeTab);
+}
+
+// 전체 요약
+function renderSummary(){
+  let html='';
+  for(const m of MEDIA){
+    const mRows=allRows.filter(r=>classifyRow(r)===m.key);
+    const mi=sum(mRows,'install'),ms=sum(mRows,'signup'),mp=sum(mRows,'purchase'),mc=sum(mRows,'cost');
+    let cards='';
+    for(const c of m.campaigns){
+      const key=m.isGroup?'group':'campaign';
+      const cRows=mRows.filter(r=>matchCamp(r[key], c));
+      const ci=sum(cRows,'install'),cs=sum(cRows,'signup'),cp=sum(cRows,'purchase'),cc=sum(cRows,'cost');
+      const empty=ci===0&&cs===0&&cp===0&&cc===0;
+      const costLine = m.key === 'cafe' ? '' : `<div class="camp-cost">비용 <b>${fC(cc)}</b></div>`;
+      cards+=`<div class="camp-card ${m.cls}${empty?' zero-card':''}">
+        <div class="camp-tag ${m.cls}">${c.label}</div>
+        <div class="camp-metrics">
+          <div><div class="camp-m-lbl">설치</div><div class="camp-m-val">${fN(ci)}</div></div>
+          <div><div class="camp-m-lbl">가입</div><div class="camp-m-val">${fN(cs)}</div></div>
+          <div><div class="camp-m-lbl">첫구매</div><div class="camp-m-val">${fN(cp)}</div></div>
+        </div>
+        ${costLine}
+      </div>`;
+    }
+    html+=`<div class="media-section">
+      <div class="media-header">
+        <span class="media-dot" style="background:${m.color}"></span>
+        <span class="media-label">${m.label}</span>
+        <div class="media-total">설치 <b>${fN(mi)}</b> 가입 <b>${fN(ms)}</b> 첫구매 <b>${fN(mp)}</b>${m.key !== 'cafe' ? ' 비용 <b>' + fC(mc) + '</b>' : ''}</div>
+      </div>
+      <div class="campaign-grid">${cards}</div>
+    </div>`;
+  }
+  document.getElementById('tab-content').innerHTML=html||'<div class="status">데이터 없음</div>';
+}
+
+// 상세 탭
+function renderDetail(mediaKey){
+  const m=MEDIA.find(x=>x.key===mediaKey);
+  if(!m) return;
+  const mRows=allRows.filter(r=>classifyRow(r)===mediaKey);
+  let html='';
+
+  for(const c of m.campaigns){
+    const campKey=m.isGroup?'group':'campaign';
+    const cRows=mRows.filter(r=>matchCamp(r[campKey], c));
+    const ci=sum(cRows,'install'),cs=sum(cRows,'signup'),cp=sum(cRows,'purchase'),cc=sum(cRows,'cost');
+
+    // 광고그룹 서브섹션 구성
+    let groupSections='';
+    if(c.groups && c.groups.length){
+      for(const g of c.groups){
+        // 광고그룹명에 match 키워드 포함 여부
+        const gRows=cRows.filter(r=>(r.group||'').includes(g.match));
+        // 전환 있는 소재만
+        const convRows=gRows.filter(r=>r.creative&&hasConv(r))
+          .sort((a,b)=>(b.purchase-a.purchase)||(b.signup-a.signup)||(b.install-a.install));
+        if(convRows.length===0) continue; // 전환 없으면 그룹 자체 숨김
+        const gi=sum(gRows,'install'),gs=sum(gRows,'signup'),gp=sum(gRows,'purchase'),gc=sum(gRows,'cost');
+        groupSections+=`
+          <div class="adgroup-section">
+            <div class="adgroup-header ${g.cls}">
+              <span class="adgroup-name">${g.label}</span>
+              <div class="adgroup-stats">설치 <b>${fN(gi)}</b> · 가입 <b>${fN(gs)}</b> · 첫구매 <b>${fN(gp)}</b> · 비용 <b>${fC(gc)}</b></div>
+            </div>
+            <div class="table-wrap">${buildTable(convRows, m.key==='cafe')}</div>
+          </div>`;
+      }
+      // 어느 그룹에도 안 속한 전환 소재
+      const matchedNames=c.groups.flatMap(g=>cRows.filter(r=>(r.group||'').includes(g.match)).map(r=>r.creative));
+      const otherRows=cRows.filter(r=>r.creative&&hasConv(r)&&!matchedNames.includes(r.creative));
+      if(otherRows.length){
+        groupSections+=`
+          <div class="adgroup-section">
+            <div class="adgroup-header default-group"><span class="adgroup-name">기타</span></div>
+            <div class="table-wrap">${buildTable(otherRows, m.key==='cafe')}</div>
+          </div>`;
+      }
+    } else {
+      // 광고그룹 정의 없는 경우 (카페 등) — 전환 소재만
+      const convRows=cRows.filter(r=>r.creative&&hasConv(r))
+        .sort((a,b)=>(b.purchase-a.purchase)||(b.signup-a.signup)||(b.install-a.install));
+      if(convRows.length){
+        groupSections+=`<div class="table-wrap">${buildTable(convRows, m.key==='cafe')}</div>`;
+      }
+    }
+
+    if(!groupSections) continue; // 전환 없으면 캠페인 블록 자체 숨김
+
+    html+=`<div class="detail-section">
+      <div class="camp-header">
+        <span class="camp-header-dot" style="background:${m.color}"></span>
+        <span class="camp-header-name">${c.label}</span>
+        <div class="camp-header-stats">설치 <b>${fN(ci)}</b> · 가입 <b>${fN(cs)}</b> · 첫구매 <b>${fN(cp)}</b> · 비용 <b>${fC(cc)}</b></div>
+      </div>
+      ${groupSections}
+    </div>`;
+  }
+
+  document.getElementById('tab-content').innerHTML=html||'<div class="status">해당 날짜 전환 데이터 없음</div>';
+}
+
+function buildTable(rows, isCafe){
+  if(!rows||rows.length===0) return '';
+  const trs=rows.map(r=>{
+    const {tags}=parseCreative(r.creative);
+    const convBadges=[
+      r.install>0?`<span class="badge b-i">설치 ${r.install}</span>`:'',
+      r.signup>0?`<span class="badge b-s">가입 ${r.signup}</span>`:'',
+      r.purchase>0?`<span class="badge b-p">첫구매 ${r.purchase}</span>`:'',
+    ].filter(Boolean).join('');
+    const tagHtml=tags.length?`<div class="ctags">${tags.map(t=>`<span class="ctag ${t.type}">${t.label}</span>`).join('')}</div>`:'';
+    const costCol=isCafe?'':`<td style="text-align:right;width:95px">${fC(r.cost)}</td>`;
+    return `<tr>
+      <td>
+        <div style="margin-bottom:4px">${convBadges||'<span style="font-size:11px;color:var(--text3)">전환 없음</span>'}</div>
+        <div style="font-size:11px;color:var(--text2);word-break:break-all">${r.creative}</div>
+        ${tagHtml}
+      </td>
+      <td style="text-align:right;width:55px">${fN(r.install)}</td>
+      <td style="text-align:right;width:55px">${fN(r.signup)}</td>
+      <td style="text-align:right;width:65px">${fN(r.purchase)}</td>
+      ${costCol}
+    </tr>`;
+  }).join('');
+  const costTh=isCafe?'':`<th style="text-align:right;width:95px">비용</th>`;
+  return `<table>
+    <thead><tr>
+      <th>소재명</th>
+      <th style="text-align:right;width:55px">설치</th>
+      <th style="text-align:right;width:55px">가입</th>
+      <th style="text-align:right;width:65px">첫구매</th>
+      ${costTh}
+    </tr></thead>
+    <tbody>${trs}</tbody>
+  </table>`;
+}
+</script>
+</body>
+</html>
