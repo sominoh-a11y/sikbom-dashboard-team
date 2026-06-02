@@ -121,12 +121,13 @@
   .ctags{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
   .ctag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:3px;border:.5px solid var(--border2);background:var(--surface2);color:var(--text2)}
   .ctag.region{background:#EEF2FF;color:#3730a3;border-color:#c7d2fe}
-  .ctag.region-east{background:#F0FFF4;color:#166534;border-color:#86efac}
+  .ctag.region-east{background:#ECFEFF;color:#0e7490;border-color:#67e8f9}
   .ctag.partner-cj{background:#ECFDF5;color:#065f46;border-color:#6ee7b7;font-weight:500}
   .ctag.partner-db{background:#FFF1F2;color:#9f1239;border-color:#fda4af;font-weight:500}
   .ctag.sku{background:#FFF7ED;color:#c2410c;border-color:#fed7aa}
-  .ctag.ver-a{background:#EFF6FF;color:#1d4ed8;border-color:#93c5fd;font-weight:500}
-  .ctag.ver-b{background:#F0F9FF;color:#0369a1;border-color:#7dd3fc;font-weight:500}
+  .ctag.vid{background:#F0FDF4;color:#15803d;border-color:#86efac}
+  .ctag.ver-a{background:#F5F3FF;color:#5b21b6;border-color:#c4b5fd;font-weight:500}
+  .ctag.ver-b{background:#FDF2F8;color:#9d174d;border-color:#f9a8d4;font-weight:500}
 
   .status{text-align:center;padding:2.5rem;color:var(--text2);font-size:13px;background:var(--surface2);border-radius:var(--r)}
   .error{background:#FCEBEB;color:#A32D2D;padding:1rem 1.25rem;border-radius:var(--rs);font-size:13px}
@@ -297,6 +298,9 @@ const SKU_MAP = {
 // 메타 전용 SKU 맵
 const META_SKU_MAP = {
   kogizip:'꼭이집', wine:'와인명규', sushi:'스시어항', ai:'AI영상', typo:'타이포영상',
+  shrimp:'칵테일새우', mayo:'마요', colazero:'제로콜라', onmirice:'온미쌀',
+  uglyyuksu:'냉면육수', vinyl:'배달봉투', happyoil:'행복콩식용유',
+  healthoil:'건강대두유', ssammu:'냉면쌈무', ssammmu:'냉면쌈무', mdgrice:'메뚜기쌀',
 };
 // 메타 소재 여부 판별 (캠페인명으로)
 function isMetaCreative(campaign) {
@@ -320,7 +324,7 @@ function parseCreative(name, campaign) {
       else tags.push({type:'partner-cj', label:'CJFW'});
     }
     // 영상 타입 태그
-    if (isVid) tags.push({type:'sku', label:'영상소재'});
+    if (isVid) tags.push({type:'vid', label:'영상소재'});
     // 메타 SKU
     for (const [key, val] of Object.entries(META_SKU_MAP)) {
       if (lower.includes(key)) { tags.push({type:'sku', label:val}); break; }
