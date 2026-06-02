@@ -121,6 +121,7 @@
   .ctags{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
   .ctag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:3px;border:.5px solid var(--border2);background:var(--surface2);color:var(--text2)}
   .ctag.region{background:#EEF2FF;color:#3730a3;border-color:#c7d2fe}
+  .ctag.region-east{background:#F0FFF4;color:#166534;border-color:#86efac}
   .ctag.partner-cj{background:#ECFDF5;color:#065f46;border-color:#6ee7b7;font-weight:500}
   .ctag.partner-db{background:#FFF1F2;color:#9f1239;border-color:#fda4af;font-weight:500}
   .ctag.sku{background:#FFF7ED;color:#c2410c;border-color:#fed7aa}
@@ -333,6 +334,7 @@ function parseCreative(name, campaign) {
   } else {
     // 기존 파싱 (네이버/카카오/카페 등)
     if (/_S(?:CJ|DB)/i.test(name)) tags.push({type:'region', label:'수도권'});
+    else if (/_E(?:CJ|DB)/i.test(name)) tags.push({type:'region-east', label:'동부'});
     if (/CJ/i.test(name)) tags.push({type:'partner-cj', label:'CJFW'});
     else if (/DB/i.test(name)) tags.push({type:'partner-db', label:'다봄푸드'});
     const ver = name.match(/_([AB])_/i);
