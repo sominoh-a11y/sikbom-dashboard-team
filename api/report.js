@@ -3,6 +3,11 @@ export const config = { runtime: 'edge' };
 const APP_NAME = 'foodspring';
 const BASE = `https://api.airbridge.io/reports/api/v7/apps/${APP_NAME}`;
 
+// 허용할 도메인 (CORS)
+const ALLOWED_ORIGINS = [
+  'https://sikbom-dashboard-team.vercel.app',
+];
+
 const CAMPAIGN_ALIASES = {
   'FS_Kakao_AOS_NRU_Biz_AON_2606_perform':             'FS_Kakao_AOS_NRU_Biz_AON_perform',
   'FS_Danggeun_Web_Central_FirstPurchase_2606_perform': 'FS_Danggeun_Web_NRU_FirstPurchase_2606_perform',
@@ -42,25 +47,48 @@ const CAFE_GROUPS = [
 ];
 
 export default async function handler(req) {
+  const origin = req.headers.get('origin') || '';
+
+  // [보안 수정 1] CORS - 허용된 도메인만 접근 가능
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+
+  // CORS preflight 처리
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders(allowedOrigin),
+    });
+  }
+
+  // [보안 수정 2] 인증 - 환경변수에 저장된 토큰과 요청 헤더 비교
+  const dashboardToken = process.env.DASHBOARD_ACCESS_TOKEN;
+  const requestToken   = req.headers.get('x-dashboard-token');
+  if (!dashboardToken || requestToken !== dashboardToken) {
+    return new Response(JSON.stringify({ error: '인증 실패' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders(allowedOrigin) },
+    });
+  }
+
   const { searchParams } = new URL(req.url);
   const date = searchParams.get('date');
-  if (!date) return json({ error: 'date 필요' }, 400);
+  if (!date) return json({ error: 'date 필요' }, 400, allowedOrigin);
 
   const apiKey = process.env.AIRBRIDGE_API_TOKEN;
-  if (!apiKey) return json({ error: 'AIRBRIDGE_API_TOKEN 없음' }, 500);
+  if (!apiKey) return json({ error: 'AIRBRIDGE_API_TOKEN 없음' }, 500, allowedOrigin);
 
   try {
     const allCampaigns = [
       ...NAVER_CAMPAIGNS, ...KAKAO_CAMPAIGNS, ...META_CAMPAIGNS,
-      ...TOSS_CAMPAIGNS, ...DANGGEUN_CAMPAIGNS,
+      ...TOSS_CAMPAIGNS,  ...DANGGEUN_CAMPAIGNS,
     ];
     const [campaignRows, cafeRows] = await Promise.all([
       fetchActuals(apiKey, date, 'campaign', allCampaigns),
       fetchActuals(apiKey, date, 'ad_group', CAFE_GROUPS),
     ]);
-    return json({ ok: true, rows: mergeRows([...campaignRows, ...cafeRows]) });
+    return json({ ok: true, rows: mergeRows([...campaignRows, ...cafeRows]) }, 200, allowedOrigin);
   } catch (e) {
-    return json({ ok: false, error: e.message }, 500);
+    return json({ ok: false, error: e.message }, 500, allowedOrigin);
   }
 }
 
@@ -70,8 +98,10 @@ function mergeRows(rows) {
     const key = `${r.campaign}||${r.group}||${r.creative}`;
     if (map.has(key)) {
       const ex = map.get(key);
-      ex.install += r.install; ex.signup += r.signup;
-      ex.purchase += r.purchase; ex.cost += r.cost;
+      ex.install  += r.install;
+      ex.signup   += r.signup;
+      ex.purchase += r.purchase;
+      ex.cost     += r.cost;
     } else {
       map.set(key, { ...r });
     }
@@ -80,11 +110,17 @@ function mergeRows(rows) {
 }
 
 async function fetchActuals(apiKey, date, filterDimension, filterValues) {
-  const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` };
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${apiKey}`,
+  };
   const body = JSON.stringify({
     from: date, to: date,
     groupBys: ['campaign', 'ad_group', 'ad_creative'],
-    metrics: ['app_installs','app_sign_up','web_sign_up','app_custom_firstPurchase','web_custom_firstPurchase','cost_channel'],
+    metrics: [
+      'app_installs', 'app_sign_up', 'web_sign_up',
+      'app_custom_firstPurchase', 'web_custom_firstPurchase', 'cost_channel',
+    ],
     filters: [{ field: filterDimension, filterType: 'IN', values: filterValues }],
     size: 1000,
   });
@@ -97,17 +133,23 @@ async function fetchActuals(apiKey, date, filterDimension, filterValues) {
 
   for (let i = 0; i < 10; i++) {
     await sleep(1000);
-    const getData = await (await fetch(`${BASE}/actuals/query/${taskId}?skip=0&size=1000`, { headers })).json();
+    const getData = await (
+      await fetch(`${BASE}/actuals/query/${taskId}?skip=0&size=1000`, { headers })
+    ).json();
+
     if (getData?.task?.status === 'SUCCESS') {
       return (getData?.actuals?.data?.rows || []).map(r => {
-        const g = r.groupBys || [], v = r.values || {};
-        const camp = CAMPAIGN_ALIASES[g[0]||''] || g[0] || '';
+        const g = r.groupBys || [];
+        const v = r.values || {};
+        const camp = CAMPAIGN_ALIASES[g[0] || ''] || g[0] || '';
         return {
-          campaign: camp, group: g[1]||'', creative: g[2]||'',
-          install:  Number(v.app_installs?.value||0),
-          signup:   Number(v.app_sign_up?.value||0) + Number(v.web_sign_up?.value||0),
-          purchase: Number(v.app_custom_firstPurchase?.value||0) + Number(v.web_custom_firstPurchase?.value||0),
-          cost:     Number(v.cost_channel?.value||0),
+          campaign: camp,
+          group:    g[1] || '',
+          creative: g[2] || '',
+          install:  Number(v.app_installs?.value  || 0),
+          signup:   Number(v.app_sign_up?.value   || 0) + Number(v.web_sign_up?.value || 0),
+          purchase: Number(v.app_custom_firstPurchase?.value || 0) + Number(v.web_custom_firstPurchase?.value || 0),
+          cost:     Number(v.cost_channel?.value  || 0),
         };
       });
     }
@@ -117,6 +159,8 @@ async function fetchActuals(apiKey, date, filterDimension, filterValues) {
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const json = (data, status = 200) => new Response(JSON.stringify(data), {
-  status, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+const corsHeaders = origin => ({ 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Headers': 'x-dashboard-token' });
+const json = (data, status = 200, origin = ALLOWED_ORIGINS[0]) => new Response(JSON.stringify(data), {
+  status,
+  headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
 });
