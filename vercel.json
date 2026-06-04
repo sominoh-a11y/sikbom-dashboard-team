@@ -1,6 +1,6 @@
 {
-  "outputDirectory": ".",
   "rewrites": [
-    { "source": "/api/report", "destination": "/api/report.js" }
+    { "source": "/api/report", "destination": "/api/report.js" },
+    { "source": "/api/auth",   "destination": "/api/auth.js" }
   ]
 }
